@@ -231,23 +231,24 @@ int bind (int fd, const struct sockaddr *sk, socklen_t sl) {
     }
 
     /*
-        FIXME: Be careful when using setsockopt
-        Is it valid to use these options for AF_UNIX?
-        Must be checked
+        SO_REUSEADDR / SO_REUSEPORT / IP_TRANSPARENT are IP socket options;
+        apply them only to IP sockets (never AF_UNIX or any other family), for
+        which SOL_IP/IP_TRANSPARENT is meaningless and would error.
     */
-
-    if (reuse_addr) {
-        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
-    }
+    if (_pf == AF_INET || _pf == AF_INET6) {
+        if (reuse_addr) {
+            setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+        }
 
 #ifdef SO_REUSEPORT
-    if (reuse_port) {
-        setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &reuse_port, sizeof(reuse_port));
-    }
+        if (reuse_port) {
+            setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &reuse_port, sizeof(reuse_port));
+        }
 #endif
 
-    if (ip_transparent) {
-        setsockopt(fd, SOL_IP, IP_TRANSPARENT, &ip_transparent, sizeof(ip_transparent));
+        if (ip_transparent) {
+            setsockopt(fd, SOL_IP, IP_TRANSPARENT, &ip_transparent, sizeof(ip_transparent));
+        }
     }
 
     return real_bind (fd, sk, sl);
