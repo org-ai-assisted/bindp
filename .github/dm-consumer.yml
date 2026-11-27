@@ -17,5 +17,6 @@ dist-ai-tests:
   ## REAL usr/src/bindp/bindp.c with its shipped Makefile and LD_PRELOADs it to
   ## check the setsockopt family gate. gcc + make compile the library and the
   ## test harness; libc6-dev supplies the headers (not pulled in under
-  ## --no-install-recommends). Added to dist-ai's baseline testing stack.
-  apt-packages: "gcc make libc6-dev"
+  ## --no-install-recommends). cbmc runs the formal-verification proofs
+  ## (bindp_cbmc.c). Added to dist-ai's baseline testing stack.
+  apt-packages: "gcc make libc6-dev cbmc"
