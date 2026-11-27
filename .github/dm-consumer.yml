@@ -18,5 +18,7 @@ dist-ai-tests:
   ## check the setsockopt family gate. gcc + make compile the library and the
   ## test harness; libc6-dev supplies the headers (not pulled in under
   ## --no-install-recommends). cbmc runs the formal-verification proofs
-  ## (bindp_cbmc.c). Added to dist-ai's baseline testing stack.
-  apt-packages: "gcc make libc6-dev cbmc"
+  ## (bindp_cbmc.c). clang + libclang-rt-dev supply libFuzzer/ASAN/UBSAN for the
+  ## parser fuzz lane (fuzz_bindp_parsers.c). Added to dist-ai's baseline testing
+  ## stack.
+  apt-packages: "gcc make libc6-dev cbmc clang libclang-rt-dev"
