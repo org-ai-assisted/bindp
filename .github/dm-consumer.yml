@@ -1,0 +1,24 @@
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Per-repo parameter overrides. Read at workflow runtime by the
+## reusable workflows in developer-meta-files. Top-level keys
+## mirror the consumer-template basename without the
+## 'consumer-' prefix. Sub-keys mirror the values the reusable
+## consumes.
+##
+## Spec:
+## https://github.com/org-ai-assisted/developer-meta-files/blob/master/agents/github-actions-consumer-templates.md
+
+dist-ai-tests:
+  ## bindp-tests (usr/share/bindp-tests in org-ai-assisted/dist-ai) builds the
+  ## REAL usr/src/bindp/bindp.c with its shipped Makefile and LD_PRELOADs it to
+  ## check the setsockopt family gate. gcc + make compile the library and the
+  ## test harness; libc6-dev supplies the headers (not pulled in under
+  ## --no-install-recommends). cbmc runs the formal-verification proofs
+  ## (bindp_cbmc.c). clang + libclang-rt-dev supply libFuzzer/ASAN/UBSAN for the
+  ## parser fuzz lane (fuzz_bindp_parsers.c). Added to dist-ai's baseline testing
+  ## stack.
+  apt-packages: "gcc make libc6-dev cbmc clang libclang-rt-dev"

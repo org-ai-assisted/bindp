@@ -1,0 +1,43 @@
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## bindp-specific: run the dist-ai FUZZ suite on CI, in addition to the fast
+## --core run in the standard "dist-ai tests" workflow. Runs bindp-tests-fuzz,
+## which compiles fuzz_bindp_parsers.c (clang + libFuzzer + ASAN + UBSAN,
+## #including the real bindp.c) and smoke-fuzzes the untrusted-input parsers
+## (parse_int_flag, get_address_family, _init env parsing).
+##
+## This is an INTENTIONAL per-repo workflow, NOT a managed consumer template
+## (pkg_update_consumer_workflows must not overwrite it). It reuses the same
+## reusable-dist-ai-tests.yml, passing the --fuzz category so it inherits the
+## caller checkout and the dm-consumer.yml apt-packages (clang + libclang-rt-dev).
+##
+## Reusable docs:
+## https://github.com/org-ai-assisted/developer-meta-files/blob/master/.github/workflows/reusable-dist-ai-tests.yml
+
+name: dist-ai fuzz
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dist-ai-fuzz:
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-dist-ai-tests.yml@master
+    with:
+      categories: '--fuzz'
+      ## A single fast parser fuzz suite (30000 runs each, well under a minute);
+      ## 30 min is ample headroom over compile + provisioning.
+      timeout-minutes: 30

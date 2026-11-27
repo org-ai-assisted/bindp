@@ -156,6 +156,8 @@ unsigned short get_address_family(const struct sockaddr *sk) {
 
 int bind (int fd, const struct sockaddr *sk, socklen_t sl) {
     unsigned short _pf = get_address_family(sk);
+    int sock_domain = 0;
+    socklen_t sock_domain_len = (socklen_t)sizeof(sock_domain);
     switch (_pf) {
         case AF_INET:
         {
@@ -231,23 +233,35 @@ int bind (int fd, const struct sockaddr *sk, socklen_t sl) {
     }
 
     /*
-        FIXME: Be careful when using setsockopt
-        Is it valid to use these options for AF_UNIX?
-        Must be checked
-    */
+        SO_REUSEADDR / SO_REUSEPORT / IP_TRANSPARENT are IP socket options;
+        apply them only to IP sockets (never AF_UNIX or any other family), for
+        which SOL_IP/IP_TRANSPARENT is meaningless and would error.
 
-    if (reuse_addr) {
-        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+        Gate on the socket's REAL address family, read from the descriptor via
+        SO_DOMAIN -- not on the caller's sa_family. Linux accepts an AF_UNSPEC
+        sockaddr with INADDR_ANY as an IPv4 wildcard bind, so keying on
+        sa_family would skip these options for a valid IPv4 socket and, with
+        reuse_addr/reuse_port set, make a second wildcard bind fail EADDRINUSE.
+        Fall back to the caller's family only if the descriptor query fails.
+    */
+    if (getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &sock_domain, &sock_domain_len) != 0) {
+        sock_domain = _pf;
     }
+
+    if (sock_domain == AF_INET || sock_domain == AF_INET6) {
+        if (reuse_addr) {
+            setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+        }
 
 #ifdef SO_REUSEPORT
-    if (reuse_port) {
-        setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &reuse_port, sizeof(reuse_port));
-    }
+        if (reuse_port) {
+            setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &reuse_port, sizeof(reuse_port));
+        }
 #endif
 
-    if (ip_transparent) {
-        setsockopt(fd, SOL_IP, IP_TRANSPARENT, &ip_transparent, sizeof(ip_transparent));
+        if (ip_transparent) {
+            setsockopt(fd, SOL_IP, IP_TRANSPARENT, &ip_transparent, sizeof(ip_transparent));
+        }
     }
 
     return real_bind (fd, sk, sl);
